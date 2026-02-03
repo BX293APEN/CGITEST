@@ -3,6 +3,9 @@
 import pycgi, pycgitb
 import os, platform, subprocess
 
+# sudo visudo
+# www-data ALL=(ALL) NOPASSWD: /sbin/shutdown
+
 class WebCGI():
     dirName = os.path.dirname(os.path.abspath(__file__))
 
@@ -96,7 +99,16 @@ class WebCGI():
                     </li>
                 </ul>
                 <span class="ms-3 d-flex" role="search">
-                    <input class="form-control me-2" type="search" placeholder="Query" aria-label="Search" id="searchbox">
+                    <form method="get" action="/cgi-bin/main.py">
+                        <input
+                            class="form-control me-2"
+                            type="search"
+                            name="url"
+                            placeholder="Query" 
+                            aria-label="query"
+                            id="searchbox"
+                        >
+                    </form>
                 </span>
             </div>
         </div>
@@ -158,11 +170,11 @@ class WebCGI():
         elif osName == "Linux": 
             second = 60
             if mode     == "shutdown":
-                self.log.handler(self.cmd_exe(["sudo", "shutdown", "-h", f"+{second/60}"]))
+                self.log.handler(self.cmd_exe(["sudo", "shutdown", "-h", f"+{second//60}"]))
                 value = f"{second}秒後にシャットダウンします"
 
             elif mode   == "reboot":
-                self.log.handler(self.cmd_exe(["sudo", "shutdown", "-r", f"+{second/60}"]))
+                self.log.handler(self.cmd_exe(["sudo", "shutdown", "-r", f"+{second//60}"]))
                 value = f"{second}秒後に再起動します"
 
             else:
