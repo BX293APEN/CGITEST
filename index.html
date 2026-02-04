@@ -5,70 +5,12 @@
         <title>
             Raspberry Pi 4B WebUI
         </title>
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link href="/template/css/bootstrap.min.css" rel="stylesheet">
-        <link href="/template/css/index.css" rel="stylesheet">
-        <link href="/template/css/welcome.css" rel="stylesheet">
-        <link href="/template/css/carousel.css" rel="stylesheet">
-        <link href="/template/css/blog.css" rel="stylesheet">
-        <link rel="icon" href="/img/PEN.ico">
-        <link href="/template/css/loading.css" rel="stylesheet">
-        <div class="loading-container" id="loadingScreen">
-            <div class="loading"></div>
-        </div>
-        <script src="/view/js/loading.js"></script>
     </head>
     <body>
-        <header data-bs-theme="dark">
-            <nav class="navbar navbar-expand-md navbar-dark fixed-top bg-dark">
-                <div class="container-fluid">
-                    <a class="navbar-brand" href="https://bx293apen.github.io/">
-                        <img src = "/img/pen.svg" height= "40px" width="40px">
-                    </a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarCollapse">
-                        <ul class="navbar-nav me-auto mb-2 mb-md-0">
-                            <li class="nav-item">
-                                <a class="nav-link" id="home" aria-current="page" href="/cgi-bin/main.py">
-                                    Home
-                                </a>
-                            </li>
-                        </ul>
-                        <ul class="navbar-nav mb-2 mb-md-0">
-                            <li class="nav-item">
-                                <a class="nav-link" href="https://github.com/BX293APEN">
-                                    <img src = "https://bx293apen.github.io/img/Github-Dark.svg" height= "40px" width="40px">
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="https://discord.gg/hszD9jqpq2">
-                                    <img src = "https://bx293apen.github.io/img/Discord.svg" height= "40px" width="40px">
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="https://x.com/BX293A_PEN">
-                                    <img src = "https://bx293apen.github.io/img/X.svg" height= "40px" width="40px">
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="https://bsky.app/profile/bx293apen.bsky.social">
-                                    <img src = "https://bx293apen.github.io/img/BlueSky.webp" height= "40px" width="40px">
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="https://ch.dlsite.com/pommu/profile/3945756">
-                                    <img src = "https://bx293apen.github.io/img/pommu.svg" height= "40px" width="40px">
-                                </a>
-                            </li>
-                        </ul>
-                    </div>
-                </div>
-            </nav>
-        </header>
     </body>
     <footer>
-        <script src="/view/js/bootstrap.bundle.min.js"></script>
+        <script>
+            window.location.replace("/cgi-bin/main.py");
+        </script>
     </footer>
 </html>

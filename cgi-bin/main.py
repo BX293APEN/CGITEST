@@ -3,6 +3,7 @@
 import pycgi, pycgitb
 import os, platform, subprocess, requests, math
 
+# pip install libcgipy
 # sudo visudo
 # www-data ALL=(ALL) NOPASSWD: /sbin/shutdown
 
