@@ -146,28 +146,95 @@ class WebCGI():
         valuePercent    = 0.5,
         svgClass        = "gauge",
         color           = "#4caf50",
-        bgColor         = "#eee"
+        bgColor         = "#eee",
+        scales          = [0, 100]
     ):
-        maxLength   = math.pi * radius
+        maxLength       = math.pi * radius
+        
+        margin          = 10
+        # 中心座標 (cx, cy)
+        cx              = radius + margin
+        cy              = radius + margin
+        
+        # 針の長さ
+        rNeedle         = radius * 1.15
+        angle           = math.pi * (1 - valuePercent)
+        xNeedle         = cx + rNeedle * math.cos(angle)
+        yNeedle         = cy - rNeedle * math.sin(angle)
+
+        scaleLine       = ""
+        for s in scales:
+            p           = (s - scales[0]) / (scales[-1] - scales[0])
+            p           = max(0, min(1, p))
+
+            angle       = math.pi * (1 - p)
+
+            r1          = radius * 0.85   # 内側
+            r2          = radius * 1.00   # 外側
+
+            x1          = cx + r1 * math.cos(angle)
+            y1          = cy - r1 * math.sin(angle)
+            x2          = cx + r2 * math.cos(angle)
+            y2          = cy - r2 * math.sin(angle)
+
+            scaleLine += f"""
+            <line
+                x1="{x1}" y1="{y1}"
+                x2="{x2}" y2="{y2}"
+                stroke="#666"
+                stroke-width="0.5"
+            />
+            """
+        
         return f"""
 <div class="position-relative d-inline-block text-start">
-    <svg class = {svgClass} viewBox="0 0 {2 * radius + 20} {radius + 10}">
+    <svg class = {svgClass} viewBox="0 0 {2 * radius + (margin * 2)} {radius + (margin * 2)}">
         <!-- 背景の半円 -->
         <path 
-            d="M10,{radius + 10} A{radius},{radius} 0 0,1 {2*radius + 10}, {radius + 10}"
+            d="
+                M
+                    {margin},{cy} 
+                A
+                    {radius},{radius} 
+                    0 0,1 
+                    {2*radius + margin}, {cy}
+            "
             fill="none" 
             stroke="{bgColor}" 
-            stroke-width="{radius * 0.25}" 
+            stroke-width="{margin/2}" 
         />
 
         <!-- 値の半円 -->
         <path 
-            d="M10,{radius + 10} A{radius},{radius} 0 0,1 {2*radius + 10}, {radius + 10}"
+            d="
+                M
+                    {margin},{cy} 
+                A
+                    {radius},{radius} 
+                    0 0,1 
+                    {2*radius + margin}, {cy}
+            "
             fill="none" 
             stroke = "{color}"
-            stroke-width="{radius * 0.25}"
-            stroke-linecap="round"
+            stroke-width="{margin/2}"
+            stroke-linecap="butt"
             stroke-dasharray="{maxLength * valuePercent} {maxLength}"
+        />
+        <!-- 目盛り -->
+            {scaleLine}
+        <!-- 針 -->
+        <line
+            x1="{cx}" y1="{cy}"
+            x2="{xNeedle}" y2="{yNeedle}"
+            stroke="#000"
+            stroke-width="0.5"
+        />
+
+        <!-- 中心の丸 -->
+        <circle
+            cx="{cx}" cy="{cy}"
+            r="{radius * 0.08}"
+            fill="#000"
         />
     </svg>
     <div 
@@ -205,7 +272,7 @@ class WebCGI():
         elif temp < 20:
             tempColor   = "#66CCFF"
         elif temp < 30:
-            tempColor   = "#66FF33"
+            tempColor   = "#009933"
         elif temp < 35:
             tempColor   = "#FF9900"
         elif temp < 45:
@@ -251,7 +318,8 @@ class WebCGI():
                                         radius          = radius,
                                         value           = f"{temp:.2f}℃",
                                         valuePercent    = tempValue,
-                                        color           = tempColor
+                                        color           = tempColor,
+                                        scales          = [-20, 0, 20, 30, 35, 45, 60]
                                     )
                                 }
                             </div>
@@ -266,7 +334,8 @@ class WebCGI():
                                         radius          = radius,
                                         value           = f"{hum:.2f}%",
                                         valuePercent    = humValue,
-                                        color           = humColor
+                                        color           = humColor,
+                                        scales          = [0, 20, 40, 50, 60, 80, 100]
                                     )
                                 }
                             </div>
