@@ -254,6 +254,23 @@ class WebCGI():
     </div>
 </div>
 """
+    
+
+    def card_create(self, title = "情報", message = ""):
+        return f"""
+<div class="row mb-2 pt-4">
+    <div class="col-12">
+        <div class="row g-0 border rounded overflow-hidden flex-md-row mb-4 shadow-sm position-relative">
+            <div class="col p-4 d-flex flex-column position-static">
+                <h3 class="mb-0">{title}</h3>
+                <p class="card-text mb-auto mt-3">
+                    {message}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+"""
 
     def html_body(self, body = "", title = "Raspberry Pi 4B WebUI", hostid = "10084"):
         param           = self.page_index(title)
@@ -279,10 +296,13 @@ class WebCGI():
             tempColor   = "#009933"
         elif temp < 35:
             tempColor   = "#FF9900"
+            body        += self.card_create(title = "注意", message = "気温が高くなっています")
         elif temp < 45:
             tempColor   = "#FF3366"
+            body        += self.card_create(title = "警告", message = "気温が高くなっています")
         else:
             tempColor   = "#FF0000"
+            body        += self.card_create(title = "警告", message = "気温が高くなっています")
 
         humValue        = max(0, min(1, hum / 100))
         if hum < 20:
@@ -307,8 +327,10 @@ class WebCGI():
             cpuColor   = "#FF9900"
         elif cpuTemp < 60:
             cpuColor   = "#FF3366"
+            body        += self.card_create(title = "注意", message = "CPU温度が高くなっています")
         else:
             cpuColor   = "#FF0000"
+            body        += self.card_create(title = "警告", message = "CPU温度が高くなっています")
         
 
         processTable    = f"""| PID | NAME | CPU | メモリ | 使用ポート |
@@ -325,6 +347,8 @@ class WebCGI():
                     port = conn.laddr.port
                     pid_ports.setdefault(pid, set()).add(port)
 
+        
+        warningApps = []
         # プロセス一覧を表示
         for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
             info = p.info
@@ -343,10 +367,13 @@ class WebCGI():
                 mem_style = ""
             elif mem > 500:
                 mem_style = "bg-danger text-black fw-bold"   # 赤
+                warningApps.append(f"| {pid} | {nameFull} | {mem:.2f}MB |")
             elif mem > 200:
                 mem_style = "bg-warning text-black fw-bold"  # オレンジ
+                warningApps.append(f"| {pid} | {nameFull} | {mem:.2f}MB |")
             else:
                 mem_style = ""
+                
 
             processTable += f"""| {pid} | {name} | {cpu_str} | <span class="{mem_style}">{mem:.2f}MB</span> | {port_str} |
 """
@@ -363,7 +390,21 @@ class WebCGI():
 <div class = "pt-4">
     {processTable}
 </div>
-"""
+""" 
+        if len(warningApps) > 0:
+            apps = f"""
+| PID | アプリ名 | メモリ使用量 |
+| - | - | - |
+{"\n".join(warningApps)}"""
+            apps = self.md.convert(apps)
+            apps = apps.replace(
+                "<table>", 
+                """<table class= "table table-bordered table-striped">"""
+            ).replace(
+                "<td>",
+                """<td class="text-nowrap">"""
+            )
+            body        += self.card_create(title = "注意", message = f"""<h4 class="mb-4 border-bottom">メモリ使用量が多いアプリ</h4>{apps}""")
 
         param["css"]    += f"""
 .gauge {{
@@ -428,7 +469,12 @@ class WebCGI():
                             </div>
                         </div>
                     </div>
-                    {body}
+                    
+                    <div class="pt-4">
+                        <div class = "border-top">
+                            {body}
+                        </div>
+                    </div>
                 
                 </div>
                 <div class="col-md-4">
@@ -478,11 +524,7 @@ class WebCGI():
                 self.log.handler(self.cmd_exe(["sudo", "shutdown", "-c"]))
                 value = f"予約された電源動作をキャンセルしました"
             
-        return self.html_body(
-            body = f"""
-<h2 class="pt-4 mt-4 border-bottom fw-bold">{value}</h2>
-"""
-        )
+        return self.html_body(body = f"""{self.card_create(message = value)}""")
     def urls(self, url):
         if url in ["shutdown", "reboot", "stop"]:
             param = self.poweroff(url)
