@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import pycgi, pycgitb
-import os, platform, subprocess, requests, math
+import os, platform, subprocess, requests, math, psutil, markdown
 
-# pip install libcgipy
+# sudo apt install python3-psutil
+# pip install libcgipy markdown
 # sudo visudo
 # www-data ALL=(ALL) NOPASSWD: /sbin/shutdown
 
@@ -113,6 +114,7 @@ class WebCGI():
 
         self.lang                   = lang
         self.log                    = pycgitb.enable()
+        self.md                     = markdown.Markdown(extensions=["extra", "tables", "attr_list"])
     
     def page_index(self, title = "Raspberry Pi 4B WebUI"): 
         with open(f"{os.path.dirname(self.dirName)}/template/html/styleConfig.html", "r", encoding="UTF-8") as html:
@@ -253,7 +255,7 @@ class WebCGI():
 </div>
 """
 
-    def html_body(self, body = "", side = "", title = "Raspberry Pi 4B WebUI"):
+    def html_body(self, body = "", title = "Raspberry Pi 4B WebUI"):
         param           = self.page_index(title)
         radius          = 20
         xSize           = 300
@@ -293,6 +295,61 @@ class WebCGI():
             humColor    = "#3333CC"
         else:
             humColor    = "#0033CC"
+        
+
+        processTable    = f"""| PID | NAME | CPU | メモリ | 使用ポート |
+| -   |  -   | -   | -      | - |
+"""
+
+        # まず全接続を取得して PID → ポート一覧 の辞書を作る
+        pid_ports = {}
+
+        for conn in psutil.net_connections(kind='inet'):
+            if conn.laddr and conn.status == psutil.CONN_LISTEN:
+                pid = conn.pid
+                if pid:
+                    port = conn.laddr.port
+                    pid_ports.setdefault(pid, set()).add(port)
+
+        # プロセス一覧を表示
+        for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
+            info = p.info
+            pid = info['pid']
+            nameFull = info['name']
+            name = nameFull if len(nameFull) <= 16 else f"{nameFull[:10]}..."
+            cpu = info.get('cpu_percent', -1)
+            cpu_str = f"{cpu:.2f}%" if cpu >= 0 else "N/A"
+            mem = float(info['memory_info'].rss)/(1024*1024) if info.get('memory_info') else '?'
+
+            # ポート一覧（LISTENのみ）
+            ports = sorted(pid_ports.get(pid, set()))
+            port_str = ", ".join(str(port) for port in ports) if ports else " - "
+
+            if mem == '?':
+                mem_style = ""
+            elif mem > 500:
+                mem_style = "bg-danger text-black fw-bold"   # 赤
+            elif mem > 200:
+                mem_style = "bg-warning text-black fw-bold"  # オレンジ
+            else:
+                mem_style = ""
+
+            processTable += f"""| {pid} | {name} | {cpu_str} | <span class="{mem_style}">{mem:.2f}MB</span> | {port_str} |
+"""
+        processTable = self.md.convert(processTable)
+        processTable = processTable.replace(
+            "<table>", 
+            """<table class= "table table-bordered table-striped">"""
+        ).replace(
+            "<td>",
+            """<td class="text-nowrap">"""
+        )
+
+        processTable = f"""
+<div class = "pt-4">
+    {processTable}
+</div>
+"""
 
         param["css"]    += f"""
 .gauge {{
@@ -346,7 +403,7 @@ class WebCGI():
                 </div>
                 <div class="col-md-4">
                     <div class="position-sticky" style="top: 2rem;">
-                        {side}
+                        {processTable}
                     </div>
                 </div>
             </div>
