@@ -444,9 +444,9 @@ class WebCGI():
         return param
     def cmd_exe(self, cmd = []):
         return subprocess.run(
-            cmd,                    # コマンドをリストで渡す（安全） 
-            capture_output=True,    # stdout / stderr を取得 
-            text=True               # str で受け取る（デフォは bytes） 
+            cmd,
+            capture_output  = True,
+            text            = True
         )
     def poweroff(self, mode):
         osName = platform.system()
