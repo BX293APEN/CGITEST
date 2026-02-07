@@ -255,7 +255,7 @@ class WebCGI():
 </div>
 """
 
-    def html_body(self, body = "", title = "Raspberry Pi 4B WebUI"):
+    def html_body(self, body = "", title = "Raspberry Pi 4B WebUI", hostid = "10084"):
         param           = self.page_index(title)
         radius          = 20
         xSize           = 300
@@ -264,6 +264,8 @@ class WebCGI():
             data        = GetZabbixData(token = self.zabbixToken)
             temp        = float(data.data_request(hostid = "10084", key = "outside.temp"))
             hum         = float(data.data_request(hostid = "10084", key = "outside.hum"))
+            cpuTemp     = float(data.data_request(hostid = hostid, key = "cpu.temp"))
+            hostName    = data.data_request(hostid = hostid, key = "system.hostname")
         else:
             temp        = 20
             hum         = 50
@@ -295,6 +297,18 @@ class WebCGI():
             humColor    = "#3333CC"
         else:
             humColor    = "#0033CC"
+        
+        cpuValue        = max(0, min(1, (cpuTemp - 0) / (100 - 0)))
+        if cpuTemp < 30:
+            cpuColor   = "#66CCFF"
+        elif cpuTemp < 40:
+            cpuColor   = "#009933"
+        elif cpuTemp < 50:
+            cpuColor   = "#FF9900"
+        elif cpuTemp < 60:
+            cpuColor   = "#FF3366"
+        else:
+            cpuColor   = "#FF0000"
         
 
         processTable    = f"""| PID | NAME | CPU | メモリ | 使用ポート |
@@ -393,6 +407,22 @@ class WebCGI():
                                         valuePercent    = humValue,
                                         color           = humColor,
                                         scales          = [0, 20, 40, 50, 60, 80, 100]
+                                    )
+                                }
+                            </div>
+                        </div>
+                        <div class="card shadow-sm text-center" style="width: fit-content;">
+                            <div class="card-header text-start fw-bold">
+                                {hostName} CPU温度
+                            </div>
+                            <div class="card-body">
+                                {
+                                    self.gauge_create(
+                                        radius          = radius,
+                                        value           = f"{cpuTemp:.2f}℃",
+                                        valuePercent    = cpuValue,
+                                        color           = cpuColor,
+                                        scales          = [0, 30, 40, 50, 60, 100]
                                     )
                                 }
                             </div>
