@@ -104,6 +104,11 @@ class WebCGI():
     dirName = os.path.dirname(os.path.abspath(__file__))
 
     def __init__(self, lang = "ja", zabbix = True):
+        for p in psutil.process_iter():
+            try:
+                p.cpu_percent(None)
+            except:
+                pass
         with open(f"{os.path.dirname(self.dirName)}/template/html/index.html", "r", encoding="UTF-8") as index:
             self.template = index.read()
         if zabbix:
@@ -341,27 +346,30 @@ class WebCGI():
         pid_ports = {}
 
         for conn in psutil.net_connections(kind='inet'):
-            if conn.laddr and conn.status == psutil.CONN_LISTEN:
-                pid = conn.pid
-                if pid:
-                    port = conn.laddr.port
-                    pid_ports.setdefault(pid, set()).add(port)
+            if conn.pid and conn.laddr and conn.status == psutil.CONN_LISTEN:
+                pid_ports.setdefault(conn.pid, set()).add(conn.laddr.port)
 
         
         warningApps = []
         # プロセス一覧を表示
         for p in psutil.process_iter(['pid', 'name', 'cpu_percent', 'memory_info']):
-            info = p.info
-            pid = info['pid']
-            nameFull = info['name']
-            name = nameFull if len(nameFull) <= 16 else f"{nameFull[:10]}..."
-            cpu = info.get('cpu_percent', -1)
-            cpu_str = f"{cpu:.2f}%" if cpu >= 0 else "N/A"
-            mem = float(info['memory_info'].rss)/(1024*1024) if info.get('memory_info') else '?'
+            info        = p.info
+            pid         = info['pid']
+            nameFull    = info['name']
+            name        = nameFull 
+            if len(nameFull) > 16: 
+                name    = f"{nameFull[:16]}..."
+
+            cpu         = info.get('cpu_percent', -1) / psutil.cpu_count()
+            cpu_str     = f"{cpu:.2f}%" 
+            if cpu < 0: 
+                cpu_str = "N/A"
+
+            mem         = float(info['memory_info'].rss)/(1024*1024) if info.get('memory_info') else '?'
 
             # ポート一覧（LISTENのみ）
-            ports = sorted(pid_ports.get(pid, set()))
-            port_str = ", ".join(str(port) for port in ports) if ports else " - "
+            ports       = map(str,sorted(pid_ports.get(pid, set())))
+            port_str    = ", ".join(ports)
 
             if mem == '?':
                 mem_style = ""
