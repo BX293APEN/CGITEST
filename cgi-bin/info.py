@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
 # pip install pandas_datareader
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 from zoneinfo import ZoneInfo
-from pandas_datareader import data as pdr
-import requests, json, os
+# from pandas_datareader import data as pdr
+import requests, json, os, math
+import yfinance as yf
 
 class GetZabbixData:
     def __init__(
@@ -96,20 +97,35 @@ class GetZabbixData:
         return value[0]["value"]
 
 class RequestWebAPI:
-    def __init__(self, pair = 'DEXJPUS'):
+    def __init__(self, pair='USDJPY=X'):
         self.pair = pair
 
     def get_doltoyen(self):
-        self.JPTime                     = datetime.now(ZoneInfo("Asia/Tokyo"))
-        self.JPDate                     = date(self.JPTime.year, self.JPTime.month, self.JPTime.day)
         try:
-            start                       = self.JPDate - timedelta(days = 15)
-            data                        = pdr.DataReader([self.pair], "fred", start, self.JPDate)
-            JPYUSD                      = data.iloc[-1][self.pair]
+            ticker = yf.Ticker(self.pair)
+
+            # 1分足の最新データを取得（最も安定）
+            data = ticker.history(period="1d", interval="1m")
+
+            if data.empty:
+                raise ValueError("Empty data from Yahoo")
+
+            # 最新の終値（実質リアルタイム）
+            price = data["Close"].iloc[-1]
+
+            if hasattr(price, "item"):
+                price = price.item()
+
+            if not isinstance(price, (float, int)) or math.isnan(price):
+                raise ValueError("Invalid price")
+
+            return float(price)
+
         except Exception as e:
             print(e)
-            JPYUSD                      = 100
-        return JPYUSD
+            return 100
+
+
 
 class RequestWeather:
     def __init__(
@@ -178,7 +194,7 @@ class JSONDataCreate():
             self.zabbixToken = token.read()
             self.zbxdata                = GetZabbixData(token = self.zabbixToken)
 
-    def get_data(self, hostid = "10084"):
+    def get_data(self, hostid = "10688"):
         JPYUSD                          = self.api.get_doltoyen()
         self.cities                     = self.weather.get_weather()
         hostName                        = self.zbxdata.data_request(hostid = hostid, key = "system.hostname")
@@ -235,7 +251,7 @@ if __name__ == "__main__":
 """)
     print(
         json.dumps(
-            data.get_data(),
+            data.get_data("10688"),
             ensure_ascii = False,
             indent = 4
         )

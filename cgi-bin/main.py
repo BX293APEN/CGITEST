@@ -6,7 +6,9 @@ import os, platform, subprocess, requests, math, psutil, markdown
 # sudo apt install python3-psutil
 # pip install libcgipy markdown
 # sudo visudo
+# Defaults:www-data env_keep += "XDG_RUNTIME_DIR DBUS_SESSION_BUS_ADDRESS"
 # www-data ALL=(ALL) NOPASSWD: /sbin/shutdown
+# www-data ALL=(ALL) NOPASSWD: /usr/bin/systemctl --user
 
 class GetZabbixData:
     def __init__(
@@ -277,7 +279,7 @@ class WebCGI():
 </div>
 """
 
-    def html_body(self, body = "", title = "Raspberry Pi 4B WebUI", hostid = "10084"):
+    def html_body(self, body = "", title = "Raspberry Pi 4B WebUI", hostid = "10688"):
         param           = self.page_index(title)
         radius          = 20
         xSize           = 300
@@ -338,7 +340,7 @@ class WebCGI():
             body        += self.card_create(title = "警告", message = "CPU温度が高くなっています")
         
 
-        processTable    = f"""| PID | NAME | CPU | メモリ | 使用ポート |
+        processTable    = f"""| PID | NAME | CPU | メモリ | Port |
 | -   |  -   | -   | -      | - |
 """
 
@@ -536,6 +538,22 @@ class WebCGI():
     def urls(self, url):
         if url in ["shutdown", "reboot", "stop"]:
             param = self.poweroff(url)
+        elif url == "digital_signage":
+            uid = subprocess.check_output(["id", "-u", "pi"]).decode().strip()
+
+            env = os.environ.copy()
+            env["XDG_RUNTIME_DIR"] = f"/run/user/{uid}"
+            env["DBUS_SESSION_BUS_ADDRESS"] = f"unix:path=/run/user/{uid}/bus"
+
+            result = subprocess.run(
+                ["sudo", "-u", "pi", "/bin/systemctl", "--user", "restart", "digital_signage.service"],
+                env=env,
+                capture_output=True,
+                text=True
+            )
+            self.log.handler(result)
+            value = "電光掲示板を再起動しました"
+            param = self.html_body(body = f"""{self.card_create(message = value)}""")
         else:
             param = self.html_body()
         return self.template.format(lang=self.lang, **param)
